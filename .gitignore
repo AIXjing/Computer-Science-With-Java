@@ -1,0 +1,5 @@
+**/target
+.lift
+.idea
+**/out
+lib
