@@ -1,5 +1,3 @@
-package week2;
-
 public class DiscreteDistribution {
   public static void main(String[] args) {
     int m = Integer.parseInt(args[0]);
