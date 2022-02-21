@@ -1,4 +1,4 @@
-package week2;
+package week3;
 
 public class Birthday {
   public static void main(String[] args) {
