@@ -4,4 +4,4 @@
 **/out
 lib
 **/*.class
-**/io
+resources/io
