@@ -1,38 +1,25 @@
-import java.awt.*;
+import java.awt.Color;
 
 public class KernelFilter {
   // Returns a new picture that applies the identity filter to the given picture.
   public static Picture identity(Picture picture) {
-    int[][] kernel = new int[3][3];
+    double[][] kernel = new double[3][3];
     kernel[1][1] = 1;
 
-    int width = picture.width();
-    int height = picture.height();
-    Picture copy = new Picture(width, height);
-    int red = 0;
-    int green = 0;
-    int blue = 0;
-    Color color;
-
-    for (int col = 0; col < width; col++) {
-      for (int row = 0; row < height; row++) {
-        color = picture.get(col, row);
-        red = color.getRed();
-        green = color.getGreen();
-        blue = color.getBlue();
-        Color identityColor = new Color(red, green, blue);
-        copy.set(col, row, identityColor);
-        //        System.out.println(picture.get(col, row));
-      }
-    }
-
-    return copy;
+    Picture identity = kernel(picture, kernel);
+    return identity;
   }
 
   // Returns a new picture that applies a Gaussian blur filter to the given picture.
   public static Picture gaussian(Picture picture) {
-    Picture copy = new Picture("pipe.png");
-    return copy;
+    double[][] kernel = {{1, 2, 1}, {2, 4, 2}, {1, 2, 1}};
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        kernel[i][j] = kernel[i][j] * (1.0 / 16);
+      }
+    }
+    Picture gaussian = kernel(picture, kernel);
+    return gaussian;
   }
 
   // Returns a new picture that applies a sharpen filter to the given picture.
@@ -44,8 +31,9 @@ public class KernelFilter {
 
   // Returns a new picture that applies an Laplacian filter to the given picture.
   public static Picture laplacian(Picture picture) {
-    Picture copy = new Picture("pipe.png");
-    return copy;
+    double[][] kernel = {{-1, -1, -1}, {-1, 8, -1}, {-1, -1, -1}};
+    Picture lap = kernel(picture, kernel);
+    return lap;
   }
 
   // Returns a new picture that applies an emboss filter to the given picture.
@@ -57,7 +45,12 @@ public class KernelFilter {
 
   // Returns a new picture that applies a motion blur filter to the given picture.
   public static Picture motionBlur(Picture picture) {
-    double[][] kernel = {{1.0 / 3.0, 0, 0}, {0, 1.0 / 3.0, 0}, {0, 0, 1.0 / 3.0}};
+    double[][] kernel = new double[9][9];
+    for (int i = 0; i < 9; i++) {
+      for (int j = 0; j < 9; j++) {
+        if (i == j) kernel[i][j] = 1.0 / 9.0;
+      }
+    }
     Picture motionBlur = kernel(picture, kernel);
     return motionBlur;
   }
@@ -67,28 +60,62 @@ public class KernelFilter {
     int height = picture.height();
     Picture filteredPic = new Picture(width, height);
 
-    for (int col = 1; col < width - 1; col++) {
-      for (int row = 1; row < height - 1; row++) {
+    // for pixel in the inside
+    for (int col = 0; col < width; col++) {
+      for (int row = 0; row < height; row++) {
         int updatedRed = 0;
         int updatedGreen = 0;
         int updatedBlue = 0;
-        for (int i = col - 1; i <= col + 1; i++) {
-          for (int j = row - 1; j <= row + 1; j++) {
-            updatedRed =
-                (int) Math.round(picture.get(i, j).getRed() * weights[i - (col - 1)][j - (row - 1)])
-                    + updatedRed;
-            updatedGreen =
-                (int)
-                        Math.round(
-                            picture.get(i, j).getGreen() * weights[i - (col - 1)][j - (row - 1)])
-                    + updatedGreen;
-            updatedBlue =
-                (int)
-                        Math.round(
-                            picture.get(i, j).getBlue() * weights[i - (col - 1)][j - (row - 1)])
-                    + updatedBlue;
+
+        // for kernel = 3x3
+        if (weights.length == 3) {
+          for (int i = col - 1; i <= col + 1; i++) {
+            for (int j = row - 1; j <= row + 1; j++) {
+              updatedRed =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getRed()
+                                  * weights[i - (col - 1)][j - (row - 1)])
+                      + updatedRed;
+              updatedGreen =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getGreen()
+                                  * weights[i - (col - 1)][j - (row - 1)])
+                      + updatedGreen;
+              updatedBlue =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getBlue()
+                                  * weights[i - (col - 1)][j - (row - 1)])
+                      + updatedBlue;
+            }
+          }
+        } else if (weights.length == 9) {
+          for (int i = col - 4; i <= col + 4; i++) {
+            for (int j = row - 4; j <= row + 4; j++) {
+              updatedRed =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getRed()
+                                  * weights[i - (col - 4)][j - (row - 4)])
+                      + updatedRed;
+              updatedGreen =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getGreen()
+                                  * weights[i - (col - 4)][j - (row - 4)])
+                      + updatedGreen;
+              updatedBlue =
+                  (int)
+                          Math.round(
+                              picture.get((i + width) % width, (j + height) % height).getBlue()
+                                  * weights[i - (col - 4)][j - (row - 4)])
+                      + updatedBlue;
+            }
           }
         }
+
         if (updatedRed > 255) updatedRed = 255;
         if (updatedRed < 0) updatedRed = 0;
         if (updatedGreen > 255) updatedGreen = 255;
@@ -104,9 +131,11 @@ public class KernelFilter {
   // Test client (ungraded).
   public static void main(String[] args) {
     Picture image = new Picture("src/pipe.png");
-    //    identity(image).show();
-    //    sharpen(image).show();
-    //    emboss(image).show();
+    identity(image).show();
+    sharpen(image).show();
+    emboss(image).show();
+    gaussian(image).show();
+    laplacian(image).show();
     motionBlur(image).show();
   }
 }
