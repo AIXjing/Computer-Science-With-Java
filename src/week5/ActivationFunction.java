@@ -1,3 +1,5 @@
+package week5;
+
 public class ActivationFunction {
   // Returns the Heaviside function of x.
   public static double heaviside(double x) {
